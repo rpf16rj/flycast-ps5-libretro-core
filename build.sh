@@ -69,7 +69,7 @@ EOF
     fi
     "$CLANG" --target=x86_64-pc-windows-msvc -O2 -nostdlib -fuse-ld=lld \
         "$ROOT/tools/prospero-lld.c" "$TOOLS_OUT/kernel32.lib" \
-        -Wl,/entry:mainCRTStartup -o "$TOOLS_OUT/prospero-lld.exe"
+        -Wl,/entry:mainCRTStartup -Wl,/subsystem:console -o "$TOOLS_OUT/prospero-lld.exe"
 fi
 cp -f "$PS5_LLVM/bin/ld.lld.exe" "$TOOLS_OUT/ld.lld.exe"
 export PS5_TOOLS="$TOOLS_OUT"
