@@ -74,8 +74,9 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          cd dist
-          zip -r ../flycast-ps5-${{ steps.date.outputs.d }}.zip .
+          # bsdtar (in Windows system32) writes zip when the archive ends in .zip
+          tar -a -cf "flycast-ps5-${{ steps.date.outputs.d }}.zip" -C dist .
+          tar -tf "flycast-ps5-${{ steps.date.outputs.d }}.zip" | head -20
 
       - name: Release
         shell: bash
@@ -83,7 +84,39 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="v${{ steps.date.outputs.d }}-run${{ github.run_number }}"
+          cat > release-notes.md <<'EOF'
+          PS5-native `flycast_libretro.so` — pronto para uso no **RetroArch para PS5**.
+
+          Este core foi feito para o projeto **PS5_RetroArch** (mirror: `chw602608/PS5_RetroArch`),
+          o RetroArch nativo para PlayStation 5 que roda no pacote **PPSA99169**.
+          Creditos ao autor do PS5 RetroArch e ao projeto Flycast
+          (`sysfce2/libretro-flycast`, revisao `e36e9df`).
+
+          ## Instalacao
+
+          Copie o conteudo do ZIP para o diretorio do RetroArch PS5
+          (`/app0`, ex.: `/usb0/homebrew/PPSA99169/` ou `/data/homebrew/PPSA99169/`):
+
+          - `cores/flycast_libretro.so` -> `<app0>/cores/`
+          - `info/flycast_libretro.info` -> `<app0>/info/`
+          - (a copia extra em `cores/flycast_libretro.info` ja vem no pacote)
+
+          Se as extensoes nao aparecerem no Core Information ou os jogos
+          (.cdi/.gdi/.chd) nao aparecerem no navegador, apague
+          `info/core_info.cache` (ou crie um arquivo vazio `info/core_info.refresh`)
+          e reinicie o RetroArch — o cache guarda entradas antigas sem .info.
+
+          ## Conteudo
+
+          - `flycast_libretro.so` — ELF64 PS5, 25 exports retro_*, relocs suportados
+            pelo loader, sem PT_TLS, sem W+X, imports cobertos pela tabela do eboot
+          - `flycast_libretro.info` — metadados (Dreamcast/Naomi/Atomiswave)
+          - `abi.json` — relatorio do check_core.py
+
+          Commit: COMMIT_SHA
+          EOF
+          sed -i "s/COMMIT_SHA/${{ github.sha }}/" release-notes.md
           gh release create "$TAG" \
             --title "flycast_libretro ${TAG}" \
-            --notes "PS5-native flycast_libretro.so for the PPSA99169 RetroArch title. Copy cores/ and info/ into the title directory (/app0). Delete info/core_info.cache (or create an empty info/core_info.refresh) before restarting so the new .info is picked up. Commit: ${{ github.sha }}" \
+            --notes-file release-notes.md \
             "flycast-ps5-${{ steps.date.outputs.d }}.zip"
