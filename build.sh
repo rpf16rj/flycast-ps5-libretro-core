@@ -94,7 +94,15 @@ export PS5_TOOLS="$TOOLS_OUT"
     "$PS5_PAYLOAD_SDK/target/lib/libc++.a" \
     future.cpp.o memory.cpp.o system_error.cpp.o thread.cpp.o)
 
-CORE_LINK_INPUTS="$OBJS/core_cxx_runtime.o $OBJS/ps5-stubs.o $OBJS/ps5-libcxx-inst.o $OBJS/libcxx/future.cpp.o $OBJS/libcxx/memory.cpp.o $OBJS/libcxx/system_error.cpp.o $OBJS/libcxx/thread.cpp.o"
+# Native clang does not understand MSYS paths (/d/a/...); emit mixed Windows
+# paths (D:/a/...) so the link line is valid when cmake expands it.
+CORE_LINK_INPUTS=""
+for o in "$OBJS/core_cxx_runtime.o" "$OBJS/ps5-stubs.o" "$OBJS/ps5-libcxx-inst.o" \
+         "$OBJS/libcxx/future.cpp.o" "$OBJS/libcxx/memory.cpp.o" \
+         "$OBJS/libcxx/system_error.cpp.o" "$OBJS/libcxx/thread.cpp.o"; do
+    CORE_LINK_INPUTS="$CORE_LINK_INPUTS $(cygpath -m "$o")"
+done
+CORE_LINK_INPUTS="${CORE_LINK_INPUTS# }"
 
 # --- 4. Patch the flycast tree ---------------------------------------------
 (cd "$FLYCAST_SRC" && git apply --check "$ROOT/patches/flycast-ps5.patch" \
