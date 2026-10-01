@@ -85,33 +85,35 @@ jobs:
         run: |
           TAG="v${{ steps.date.outputs.d }}-run${{ github.run_number }}"
           cat > release-notes.md <<'EOF'
-          PS5-native `flycast_libretro.so` — pronto para uso no **RetroArch para PS5**.
+          PS5-native `flycast_libretro.so` — ready to use in **RetroArch for PS5**.
 
-          Este core foi feito para o projeto **PS5_RetroArch** (mirror: `chw602608/PS5_RetroArch`),
-          o RetroArch nativo para PlayStation 5 que roda no pacote **PPSA99169**.
-          Creditos ao autor do PS5 RetroArch e ao projeto Flycast
-          (`sysfce2/libretro-flycast`, revisao `e36e9df`).
+          This core was built for the **PS5_RetroArch** project
+          (`mihawk-99/PS5_RetroArch`, formerly `chw602608/PS5_RetroArch`),
+          the native PlayStation 5 RetroArch that runs as the **PPSA99169** title.
+          Credits to the PS5 RetroArch author and to the Flycast project
+          (`sysfce2/libretro-flycast`, revision `e36e9df`).
 
-          ## Instalacao
+          ## Install
 
-          Copie o conteudo do ZIP para o diretorio do RetroArch PS5
-          (`/app0`, ex.: `/usb0/homebrew/PPSA99169/` ou `/data/homebrew/PPSA99169/`):
+          Extract the ZIP into the RetroArch PS5 directory
+          (`/app0`, e.g. `/usb0/homebrew/PPSA99169/` or `/data/homebrew/PPSA99169/`):
 
           - `cores/flycast_libretro.so` -> `<app0>/cores/`
           - `info/flycast_libretro.info` -> `<app0>/info/`
-          - (a copia extra em `cores/flycast_libretro.info` ja vem no pacote)
+          - (the extra copy `cores/flycast_libretro.info` is already in the package)
 
-          Se as extensoes nao aparecerem no Core Information ou os jogos
-          (.cdi/.gdi/.chd) nao aparecerem no navegador, apague
-          `info/core_info.cache` (ou crie um arquivo vazio `info/core_info.refresh`)
-          e reinicie o RetroArch — o cache guarda entradas antigas sem .info.
+          If the extensions do not show in Core Information or your games
+          (.cdi/.gdi/.chd) do not appear in the browser, delete
+          `info/core_info.cache` (or create an empty `info/core_info.refresh` file)
+          and restart RetroArch — the cache keeps stale entries without .info.
 
-          ## Conteudo
+          ## Contents
 
-          - `flycast_libretro.so` — ELF64 PS5, 25 exports retro_*, relocs suportados
-            pelo loader, sem PT_TLS, sem W+X, imports cobertos pela tabela do eboot
-          - `flycast_libretro.info` — metadados (Dreamcast/Naomi/Atomiswave)
-          - `abi.json` — relatorio do check_core.py
+          - `flycast_libretro.so` — PS5 ELF64, 25 retro_* exports, only
+            loader-supported relocations, no PT_TLS, no W+X, all imports covered
+            by the eboot's binding table
+          - `flycast_libretro.info` — metadata (Dreamcast/Naomi/Atomiswave)
+          - `abi.json` — check_core.py report
 
           Commit: COMMIT_SHA
           EOF

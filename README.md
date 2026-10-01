@@ -1,102 +1,104 @@
-# flycast_libretro para PS5 (PPSA99169)
+# flycast_libretro for PS5 (PPSA99169)
 
-Porte do core [Flycast](https://github.com/flyinghead/flycast) (Sega
-Dreamcast / NAOMI / Atomiswave) para o RetroArch nativo de PlayStation 5 —
-**este porte é para o projeto
-[PS5_RetroArch](https://github.com/mihawk-99/PS5_RetroArch) de mihawk-99**
-(título `PPSA99169`; o repositório original pode estar indisponível/404, mas
-todo o trabalho aqui segue o contrato de ABI, o loader customizado e a
-estrutura de deploy daquele port). Compilado em Windows nativo com o
-[ps5-payload-sdk](https://github.com/ps5-payload-dev/sdk) — sem WSL, sem MSYS2.
+Port of the [Flycast](https://github.com/flyinghead/flycast) libretro core
+(Sega Dreamcast / NAOMI / Atomiswave) to the native PlayStation 5 RetroArch —
+**this port targets the
+[PS5_RetroArch](https://github.com/mihawk-99/PS5_RetroArch) project by
+mihawk-99** (title `PPSA99169`; the original repository may be
+unavailable/404, but all the work here follows that port's ABI contract,
+custom core loader and deploy layout). Built on native Windows with the
+[ps5-payload-sdk](https://github.com/ps5-payload-dev/sdk) — no WSL, no MSYS2.
 
-Documentação completa (build, deploy, riscos): [docs/FLYCAST_PS5.pt.md](docs/FLYCAST_PS5.pt.md)
+Full documentation (build, deploy, risks): [docs/FLYCAST_PS5.md](docs/FLYCAST_PS5.md)
 
-## O que este repositório contém
+## What this repository contains
 
 ```
-build.sh              Script de build reproduzível (Git Bash)
+build.sh              Reproducible build script (Git Bash)
 toolchain/
-  ps5-toolchain.cmake Toolchain CMake: clang x86_64-sie-ps5 + SDK, sem CRT,
-                      linker script ps5-core.ld, TLS emulado
-  ps5-core.ld         Linker script: segmentos RX/R/RW em páginas de 16 KiB
-  ps5-stubs.c         Stubs de símbolos que a tabela de imports não provê
+  ps5-toolchain.cmake CMake toolchain: x86_64-sie-ps5 clang + SDK, no CRT,
+                      the ps5-core.ld linker script, emulated TLS
+  ps5-core.ld         Linker script: RX/R/RW segments on 16 KiB pages
+  ps5-stubs.c         Stubs for symbols the import table does not provide
                       (PTY, __register_frame, newlocale/uselocale)
-  ps5-libcxx-inst.cpp Instanciação explícita de std::stringbuf::str(str)
-  core_cxx_runtime.cpp Registro __cxa_atexit/__cxa_finalize por-DSO
+  ps5-libcxx-inst.cpp Explicit instantiation of std::stringbuf::str(str)
+  core_cxx_runtime.cpp Per-DSO __cxa_atexit/__cxa_finalize registry
 patches/
-  flycast-ps5.patch   Sem --no-undefined, PAGE_SIZE=16384 fixo, e
-                      JIT via ps5_exec_allocate/ps5_exec_release em
+  flycast-ps5.patch   No --no-undefined, fixed PAGE_SIZE=16384, and
+                      JIT through ps5_exec_allocate/ps5_exec_release in
                       core/linux/posix_vmem.cpp
 info/
-  flycast_libretro.info  Core info (display_name, extensões, database)
+  flycast_libretro.info  Core metadata (display name, extensions, database)
 tools/
-  prospero-lld.c      Forwarder do linker: o driver PS5 do clang chama
-                      "prospero-lld" com args de lld Sony; este reescreve para
-                      ld.lld stock (-z max-page-size=0x4000, emulated-tls,
-                      sem -pie em --shared)
-  check_core.py       Gate de ABI: ELF64 FreeBSD ET_DYN, NEEDED whitelist,
-                      exports retro_*, segmentos 16 KiB (sem binutils)
-  check_imports.py    Cobertura de imports vs eboot.bin / tabela do título
-  readelf.py          Shim readelf -dW/--dyn-syms puro em Python
-  readelf.cmd         Wrapper para o shim
+  prospero-lld.c      Linker forwarder: the clang PS5 driver invokes
+                      "prospero-lld" with Sony lld arguments; this rewrites
+                      them for stock ld.lld (-z max-page-size=0x4000,
+                      emulated-tls, no -pie under --shared)
+  check_core.py       ABI gate: ELF64 FreeBSD ET_DYN, NEEDED whitelist,
+                      retro_* exports, 16 KiB segments (no binutils needed)
+  check_imports.py    Import coverage vs eboot.bin / the title's table
+  readelf.py          Pure-Python readelf -dW/--dyn-syms shim
+  readelf.cmd         Wrapper for the shim
 ```
 
-## Requisitos
+## Requirements
 
-- Windows com LLVM/clang instalado em path **sem espaços** (ex.: `C:\ps5llvm`)
-- CMake + o `ninja.exe` bundled do SDK (`ps5-payload-sdk/win/`)
-- Checkout do [ps5-payload-sdk](https://github.com/ps5-payload-dev/sdk)
-- Checkout do flycast (`sysfce2/libretro-flycast`, rev `e36e9df`) com
-  submodules recursivos — inclui o nested `tinycmmc` do tinygettext
-- O `eboot.bin` do título instalado (para o check de imports)
+- Windows with LLVM/clang installed at a path **without spaces**
+  (e.g. `C:\ps5llvm`)
+- CMake + the SDK's bundled `ninja.exe` (`ps5-payload-sdk/win/`)
+- A checkout of the [ps5-payload-sdk](https://github.com/ps5-payload-dev/sdk)
+- A checkout of flycast (`sysfce2/libretro-flycast`, rev `e36e9df`) with
+  recursive submodules — including tinygettext's nested `tinycmmc`
+- The installed title's `eboot.bin` (for the import coverage check)
 
 ## Build
 
 ```bash
 PS5_LLVM=C:/ps5llvm \
-PS5_PAYLOAD_SDK=/caminho/ps5-payload-sdk \
-FLYCAST_SRC=/caminho/flycast \
-EBOOT=/caminho/PPSA99169/eboot.bin \
+PS5_PAYLOAD_SDK=/path/to/ps5-payload-sdk \
+FLYCAST_SRC=/path/to/flycast \
+EBOOT=/path/to/PPSA99169/eboot.bin \
 ./build.sh
 ```
 
-Produz `build/flycast-ps5/flycast_libretro.so` já verificado por ABI:
-ELF64 x86-64 FreeBSD ET_DYN, segmentos 16 KiB RX/R/RW, só os 4 tipos de
-reloc suportados pelo loader (`RELATIVE`, `64`, `GLOB_DAT`, `JUMP_SLOT`),
-25 exports `retro_*`, 0 imports fora da tabela `ps5_core_import`.
+Produces `build/flycast-ps5/flycast_libretro.so`, already ABI-checked:
+ELF64 x86-64 FreeBSD ET_DYN, 16 KiB RX/R/RW segments, only the four
+relocation types the loader supports (`RELATIVE`, `64`, `GLOB_DAT`,
+`JUMP_SLOT`), 25 `retro_*` exports, 0 imports outside the `ps5_core_import`
+table.
 
 ## Deploy (console)
 
-Espelhar dentro do diretório do título (`/app0`; no seu setup pode ser
-`/data/homebrew/PPSA99169` ou `/usb0/homebrew/PPSA99169`):
+Mirror into the title directory (`/app0`; depending on your setup that is
+`/data/homebrew/PPSA99169` or `/usb0/homebrew/PPSA99169`):
 
 ```
 cores/flycast_libretro.so
 info/flycast_libretro.info
-cores/flycast_libretro.info   (fallback p/ configs com info_path vazio)
+cores/flycast_libretro.info   (fallback for configs with an empty info path)
 ```
 
-Depois **apague `info/core_info.cache`** (ou crie um arquivo vazio
-`info/core_info.refresh`) e reinicie o RetroArch — o cache de core-info do
-upstream guarda entradas "sem info" de cores que foram carregados antes do
-`.info` existir, e nunca as relê.
+Then **delete `info/core_info.cache`** (or create an empty
+`info/core_info.refresh` file) and restart RetroArch — the upstream
+core-info cache keeps "no info" entries for cores that were loaded before
+the `.info` existed and never reads them again.
 
-BIOS Dreamcast (opcional — HLE funciona): `system/dc/dc_boot.bin`,
-`system/dc/dc_flash.bin`. ROMs `.cdi`/`.gdi`/`.chd` em qualquer pasta que o
-browser alcance (`/app0`, `/data`, `/mnt/usb0`, `/mnt/usb1`).
+Dreamcast BIOS (optional — HLE works): `system/dc/dc_boot.bin`,
+`system/dc/dc_flash.bin`. `.cdi`/`.gdi`/`.chd` ROMs in any folder the
+browser can reach (`/app0`, `/data`, `/mnt/usb0`, `/mnt/usb1`).
 
-## Estado
+## Status
 
-- [x] Build nativo Windows→PS5 completo (clang + ld.lld + payload SDK)
-- [x] ABI/import/relocation gates passando
-- [x] JIT/dynarec usando `ps5_exec_allocate` (pools executáveis do título)
-- [x] Core carrega e boota BIOS no console
-- [ ] Teste de conteúdo (gdi/cdi/chd), vídeo Vulkan, áudio, input, savestates
-- [ ] Fastmem (reserva `mmap PROT_NONE` + `shm_open`) — falha degrada
-      para malloc + JIT lento, não crash
+- [x] Complete native Windows→PS5 build (clang + ld.lld + payload SDK)
+- [x] ABI/import/relocation gates passing
+- [x] JIT/dynarec on `ps5_exec_allocate` (the title's executable pools)
+- [x] Core loads and boots the BIOS on the console
+- [ ] Content test (gdi/cdi/chd), Vulkan video, audio, input, save states
+- [ ] Fastmem (`mmap PROT_NONE` reservation + `shm_open`) — failure degrades
+      to malloc + slow JIT, not a crash
 
-## Créditos e licença
+## Credits and licence
 
 Flycast © flyinghead — GPLv2. PS5_RetroArch © mihawk-99 — GPLv3.
-ps5-payload-sdk © ps5-payload-dev. Toolchain, patches e ferramentas deste
-repo seguem GPLv3.
+ps5-payload-sdk © ps5-payload-dev. The toolchain, patches and tools in this
+repository are GPLv3.
