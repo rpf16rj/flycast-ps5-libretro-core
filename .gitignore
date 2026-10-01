@@ -1,0 +1,16 @@
+# Build output and environment artifacts
+build/
+dist/
+*.so
+*.o
+*.obj
+*.exe
+!tools/prospero-lld.exe.example
+*.lib
+*.def
+!tools/kernel32.def.example
+eboot.bin
+*.elf
+*.prx
+*.zip
+__pycache__/

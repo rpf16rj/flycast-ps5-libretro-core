@@ -1,0 +1,29 @@
+# Software Information
+display_name = "Sega - Dreamcast/NAOMI (Flycast)"
+authors = "flyinghead"
+supported_extensions = "cdi|gdi|chd|cue|elf|lst|bin|dat|zip|7z"
+corename = "Flycast"
+
+# Hardware Information
+manufacturer = "Sega"
+categories = "Emulator"
+systemname = "Dreamcast/NAOMI/Atomiswave"
+systemid = "sega_dreamcast"
+database = "Sega - Dreamcast|Sega - NAOMI|Sega - Atomiswave"
+license = "GPLv2"
+permissions = ""
+display_version = "v2.5"
+
+# Libretro Features
+supports_no_game = "true"
+hw_render = "true"
+needs_fullpath = "true"
+disk_control = "true"
+savestate = "true"
+savestate_features = "deterministic"
+cheats = "true"
+input_descriptors = "true"
+memory_descriptors = "true"
+libretro_saves = "true"
+core_options = "true"
+load_subsystem = "false"
