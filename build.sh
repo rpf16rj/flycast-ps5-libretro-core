@@ -64,8 +64,8 @@ EXPORTS
   GetCommandLineA
 EOF
         MSYS2_ARG_CONV_EXCL='/def;/out;/machine' \
-        "$LLDLIB" /def:"$TOOLS_OUT/kernel32.def" \
-            /out:"$TOOLS_OUT/kernel32.lib" /machine:x64
+        "$LLDLIB" /def:"$(cygpath -w "$TOOLS_OUT/kernel32.def")" \
+            /out:"$(cygpath -w "$TOOLS_OUT/kernel32.lib")" /machine:x64
     fi
     "$CLANG" --target=x86_64-pc-windows-msvc -O2 -nostdlib -fuse-ld=lld \
         "$ROOT/tools/prospero-lld.c" "$TOOLS_OUT/kernel32.lib" \
