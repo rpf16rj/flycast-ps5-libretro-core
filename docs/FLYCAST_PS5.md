@@ -77,6 +77,9 @@ core-options file is required for a good out-of-the-box picture:
   Vulkan OIT transparency (modifier volumes stay `enabled` as upstream).
   `config::RenderType` defaults to `Vulkan_OIT` for the same fallback
   coverage.
+- `flycast_widescreen_hack` → `enabled` — draws geometry outside 4:3,
+  matching the title's fullscreen 16:9 output. `flycast_widescreen_cheats`
+  stays `disabled` (per-game cheat codes, not the geometry hack).
 
 `flycast_anisotropic_filtering` is also switched from `Option<int>` to
 `IntOption`: `Option<int>::doLoad` returns the *index* of the selected

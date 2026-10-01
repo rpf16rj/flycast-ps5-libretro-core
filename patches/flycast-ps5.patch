@@ -108,7 +108,7 @@ index 2d42410..d1eae72 100644
  
  // Use two addr spaces: need to remap something twice, therefore use allocate_shared_filemem()
 diff --git a/shell/libretro/libretro_core_options.h b/shell/libretro/libretro_core_options.h
-index 8c58e74..c0098c6 100644
+index 8c58e74..81f64bb 100644
 --- a/shell/libretro/libretro_core_options.h
 +++ b/shell/libretro/libretro_core_options.h
 @@ -318,6 +318,9 @@ struct retro_core_option_v2_definition option_defs_us[] = {
@@ -144,11 +144,38 @@ index 8c58e74..c0098c6 100644
     },
     {
        CORE_OPTION_NAME "_texture_filtering",
+@@ -708,7 +719,13 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+          { "enabled",  NULL },
+          { NULL, NULL },
+       },
++#ifdef __PROSPERO__
++      /* PS5: the title renders fullscreen 16:9, so draw the extra
++       * geometry instead of letterboxing to 4:3. */
++      "enabled",
++#else
+       "disabled",
++#endif
+    },
+    {
+       CORE_OPTION_NAME "_gdrom_fast_loading",
 diff --git a/shell/libretro/option.cpp b/shell/libretro/option.cpp
-index 6d317df..dc396a2 100644
+index 6d317df..e0408cc 100644
 --- a/shell/libretro/option.cpp
 +++ b/shell/libretro/option.cpp
-@@ -84,12 +84,24 @@ std::array<Option<int>, 4> CrosshairColor {
+@@ -54,7 +54,12 @@ Option<bool> VmuSound(CORE_OPTION_NAME "_vmu_sound", false);
+ 
+ RendererOption RendererType;
+ Option<bool> UseMipmaps(CORE_OPTION_NAME "_mipmapping", true);
++#ifdef __PROSPERO__
++// PS5: fallback matching the option definition's enabled default.
++Option<bool> Widescreen(CORE_OPTION_NAME "_widescreen_hack", true);
++#else
+ Option<bool> Widescreen(CORE_OPTION_NAME "_widescreen_hack");
++#endif
+ Option<bool> SuperWidescreen("");
+ Option<bool> ShowFPS("");
+ Option<bool> RenderToTextureBuffer(CORE_OPTION_NAME "_enable_rttb");
+@@ -84,12 +89,24 @@ std::array<Option<int>, 4> CrosshairColor {
  Option<int> SkipFrame(CORE_OPTION_NAME "_frame_skipping");
  Option<int> MaxThreads("", 3);
  Option<int> AutoSkipFrame(CORE_OPTION_NAME "_auto_skip_frame", 0);
