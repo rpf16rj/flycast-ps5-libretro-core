@@ -24,7 +24,11 @@ jobs:
         run: |
           # The prospero clang driver derives paths from argv[0]; spaces in
           # "Program Files" break it, so junction to C:\ps5llvm.
-          cmd //c "mklink /J C:\\ps5llvm \"C:\\Program Files\\LLVM\""
+          LLVM_SRC="C:\\Program Files\\LLVM"
+          [ -f "$LLVM_SRC/bin/clang.exe" ] || LLVM_SRC="$(dirname "$(dirname "$(which clang)")")"
+          echo "LLVM source: $LLVM_SRC"
+          MSYS=winsymlinks:nativestrict ln -s "$(cygpath -u "$LLVM_SRC")" /c/ps5llvm 2>/dev/null || \
+            cmd //c mklink //J C:\\ps5llvm "$LLVM_SRC"
           C:/ps5llvm/bin/clang.exe --version | head -1
           test -f C:/ps5llvm/bin/ld.lld.exe
 
