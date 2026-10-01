@@ -41,7 +41,9 @@ LLDLIB="$PS5_LLVM/bin/llvm-lib.exe"
 # Flags mirroring win/prospero-clang.cmd (the .cmd wrappers break on spaces in
 # paths, so we pass the arguments directly to stock clang).
 PS5_FLAGS="--target=x86_64-sie-ps5 -isysroot $PS5_PAYLOAD_SDK -isystem $PS5_PAYLOAD_SDK/target/include -fno-stack-protector -fno-plt -femulated-tls"
-PS5_CXXFLAGS="$PS5_FLAGS -isystem $PS5_PAYLOAD_SDK/target/include/c++/v1 -frtti -fexceptions"
+# libc++ headers must precede the C library headers: <cstdlib> includes_next
+# <stdlib.h> and finds the libc one first otherwise.
+PS5_CXXFLAGS="-isystem $PS5_PAYLOAD_SDK/target/include/c++/v1 $PS5_FLAGS -frtti -fexceptions"
 PS5_LD="-nostdlib -nostartfiles -nodefaultlibs -L$PS5_PAYLOAD_SDK/target/lib"
 
 mkdir -p "$TOOLS_OUT" "$OBJS/libcxx" "$OUT"
