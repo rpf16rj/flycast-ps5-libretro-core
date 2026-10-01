@@ -1,9 +1,12 @@
 # flycast_libretro para PS5 (PPSA99169)
 
 Porte do core [Flycast](https://github.com/flyinghead/flycast) (Sega
-Dreamcast / NAOMI / Atomiswave) para o RetroArch nativo de PlayStation 5
-([PS5_RetroArch](https://github.com/mihawk-99/PS5_RetroArch)), compilado em
-Windows nativo com o
+Dreamcast / NAOMI / Atomiswave) para o RetroArch nativo de PlayStation 5 —
+**este porte é para o projeto
+[PS5_RetroArch](https://github.com/mihawk-99/PS5_RetroArch) de mihawk-99**
+(título `PPSA99169`; o repositório original pode estar indisponível/404, mas
+todo o trabalho aqui segue o contrato de ABI, o loader customizado e a
+estrutura de deploy daquele port). Compilado em Windows nativo com o
 [ps5-payload-sdk](https://github.com/ps5-payload-dev/sdk) — sem WSL, sem MSYS2.
 
 Documentação completa (build, deploy, riscos): [docs/FLYCAST_PS5.pt.md](docs/FLYCAST_PS5.pt.md)

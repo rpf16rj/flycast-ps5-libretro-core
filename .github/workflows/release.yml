@@ -1,0 +1,85 @@
+name: build-and-release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  FLYCAST_REPO: https://github.com/sysfce2/libretro-flycast
+  FLYCAST_REV: e36e9df
+  SDK_RELEASE_URL: https://github.com/ps5-payload-dev/sdk/releases/download/v0.43/ps5-payload-sdk.zip
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: LLVM at a space-free path
+        shell: bash
+        run: |
+          # The prospero clang driver derives paths from argv[0]; spaces in
+          # "Program Files" break it, so junction to C:\ps5llvm.
+          cmd //c "mklink /J C:\\ps5llvm \"C:\\Program Files\\LLVM\""
+          C:/ps5llvm/bin/clang.exe --version | head -1
+          test -f C:/ps5llvm/bin/ld.lld.exe
+
+      - name: Fetch ps5-payload-sdk
+        shell: bash
+        run: |
+          curl -L -o sdk.zip "$SDK_RELEASE_URL"
+          unzip -q sdk.zip
+          rm sdk.zip
+          test -f ps5-payload-sdk/target/lib/libc++.a
+          test -f ps5-payload-sdk/win/ninja.exe
+
+      - name: Fetch flycast (pinned revision + submodules)
+        shell: bash
+        run: |
+          git clone "$FLYCAST_REPO" flycast
+          git -C flycast checkout "$FLYCAST_REV"
+          git -C flycast submodule update --init --recursive
+          test -f flycast/core/deps/tinygettext/external/tinycmmc/CMakeLists.txt
+
+      - name: Build flycast_libretro.so
+        shell: bash
+        env:
+          PS5_LLVM: C:/ps5llvm
+          PS5_PAYLOAD_SDK: ${{ github.workspace }}/ps5-payload-sdk
+          FLYCAST_SRC: ${{ github.workspace }}/flycast
+        run: ./build.sh
+
+      - name: Stage deployable tree
+        shell: bash
+        run: |
+          mkdir -p dist/cores dist/info
+          cp build/flycast-ps5/flycast_libretro.so dist/cores/
+          cp info/flycast_libretro.info dist/info/
+          cp info/flycast_libretro.info dist/cores/
+          cp build/flycast-ps5/abi.json dist/ 2>/dev/null || true
+          ls -lR dist
+
+      - id: date
+        shell: bash
+        run: echo "d=$(date +%Y.%m.%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Package
+        shell: bash
+        run: |
+          cd dist
+          zip -r ../flycast-ps5-${{ steps.date.outputs.d }}.zip .
+
+      - name: Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ steps.date.outputs.d }}-run${{ github.run_number }}"
+          gh release create "$TAG" \
+            --title "flycast_libretro ${TAG}" \
+            --notes "PS5-native flycast_libretro.so for the PPSA99169 RetroArch title. Copy cores/ and info/ into the title directory (/app0). Delete info/core_info.cache (or create an empty info/core_info.refresh) before restarting so the new .info is picked up. Commit: ${{ github.sha }}" \
+            "flycast-ps5-${{ steps.date.outputs.d }}.zip"

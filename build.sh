@@ -91,7 +91,7 @@ export PS5_TOOLS="$TOOLS_OUT"
     "$PS5_PAYLOAD_SDK/target/lib/libc++.a" \
     future.cpp.o memory.cpp.o system_error.cpp.o thread.cpp.o)
 
-export PS5_CORE_LINK_INPUTS="$OBJS/core_cxx_runtime.o $OBJS/ps5-stubs.o $OBJS/ps5-libcxx-inst.o $OBJS/libcxx/future.cpp.o $OBJS/libcxx/memory.cpp.o $OBJS/libcxx/system_error.cpp.o $OBJS/libcxx/thread.cpp.o"
+CORE_LINK_INPUTS="$OBJS/core_cxx_runtime.o $OBJS/ps5-stubs.o $OBJS/ps5-libcxx-inst.o $OBJS/libcxx/future.cpp.o $OBJS/libcxx/memory.cpp.o $OBJS/libcxx/system_error.cpp.o $OBJS/libcxx/thread.cpp.o"
 
 # --- 4. Patch the flycast tree ---------------------------------------------
 (cd "$FLYCAST_SRC" && git apply --check "$ROOT/patches/flycast-ps5.patch" \
@@ -106,6 +106,7 @@ export PS5_CORE_LINK_INPUTS="$OBJS/core_cxx_runtime.o $OBJS/ps5-stubs.o $OBJS/ps
 cmake -G Ninja -S "$FLYCAST_SRC" -B "$OUT" \
     -DCMAKE_TOOLCHAIN_FILE="$ROOT/toolchain/ps5-toolchain.cmake" \
     -DCMAKE_MAKE_PROGRAM="$PS5_PAYLOAD_SDK/win/ninja.exe" \
+    "-DPS5_CORE_LINK_INPUTS=$CORE_LINK_INPUTS" \
     -DLIBRETRO=ON -DUSE_VULKAN=ON -DUSE_OPENGL=OFF \
     -DUSE_HOST_GLSLANG=OFF -DUSE_HOST_LIBCHDR=OFF -DUSE_HOST_LIBZIP=OFF \
     -DUSE_OPENMP=OFF -DUSE_DISCORD=OFF -DUSE_MINIUPNPC=OFF \
