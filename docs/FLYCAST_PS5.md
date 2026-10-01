@@ -63,6 +63,42 @@ infos).
 Fix: delete `info/core_info.cache` **or** create an empty
 `info/core_info.refresh` file and restart RetroArch.
 
+## Baked-in defaults
+
+The patch makes the core's RetroArch defaults match a 4K PS5 output, so no
+core-options file is required for a good out-of-the-box picture:
+
+- `flycast_internal_resolution` → `2880x2160` (x4.5). Fallback
+  `config::RenderResolution` is `2160` as well, so the core renders at 4.5x
+  even if the frontend never answers `GET_VARIABLE`.
+- `flycast_anisotropic_filtering` → `16` (labeled "Anisotropic Filtering";
+  Flycast has no MSAA option — AF16 is the maximum texture filtering).
+- `flycast_alpha_sorting` → `per-pixel (accurate)` — the "blending" path:
+  Vulkan OIT transparency (modifier volumes stay `enabled` as upstream).
+  `config::RenderType` defaults to `Vulkan_OIT` for the same fallback
+  coverage.
+
+`flycast_anisotropic_filtering` is also switched from `Option<int>` to
+`IntOption`: `Option<int>::doLoad` returns the *index* of the selected
+string (`"16"` → `4`), silently capping real anisotropy at 4x; `IntOption`
+parses the value. This is an upstream bug that only shows on the PS5
+because the default moved past index 3.
+
+`.opt` overrides still work on top of these defaults when the frontend
+persists them.
+
+## Core-option overrides
+
+RetroArch writes per-game/per-core option files under
+`/app0/config/Flycast/<game>.opt` when the core unloads or the menu's
+"Overrides" entry is used — the file is only created if a setting differs
+from the definitions' defaults or the override is saved explicitly. If
+"Save Core Override" produces no file, check `log_dir` (`/app0/*.log`)
+for `core_options`/`config_file_write` errors and confirm `config/` is
+writable from the homebrew's mount. With the baked defaults above, the
+core already starts at the desired picture settings, so overrides are
+only needed for per-game tweaks.
+
 ## Deploy on the console
 
 Title FTP base: `/data/homebrew/PPSA99169/` = `/app0` on the console (or

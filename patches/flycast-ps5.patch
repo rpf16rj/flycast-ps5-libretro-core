@@ -24,6 +24,32 @@ index 365c023..45d2e2f 100644
  	target_compile_definitions(${PROJECT_NAME} PRIVATE PAGE_SIZE=${PAGE_SIZE})
  endif()
  
+diff --git a/core/cfg/option.h b/core/cfg/option.h
+index 267c90b..f98e1d8 100644
+--- a/core/cfg/option.h
++++ b/core/cfg/option.h
+@@ -417,6 +417,9 @@ public:
+ 			RenderType::DirectX11
+ #elif defined(USE_DX9)
+ 			RenderType::DirectX9
++#elif defined(__PROSPERO__) && !defined(USE_OPENGL)
++			// PS5: per-pixel (OIT) transparency is the built-in default.
++			RenderType::Vulkan_OIT
+ #elif !defined(USE_OPENGL)
+ 			RenderType::Vulkan
+ #else
+@@ -468,7 +471,11 @@ extern Option<bool> IntegerScale;
+ extern Option<bool> LinearInterpolation;
+ extern Option<bool> VSync;
+ extern Option<int64_t> PixelBufferSize;
++#ifdef __PROSPERO__
++extern IntOption AnisotropicFiltering;
++#else
+ extern Option<int> AnisotropicFiltering;
++#endif
+ extern Option<int> TextureFiltering; // 0: default, 1: force nearest, 2: force linear
+ extern Option<bool> ThreadedRendering;
+ extern Option<bool> DupeFrames;
 diff --git a/core/linux/posix_vmem.cpp b/core/linux/posix_vmem.cpp
 index 2d42410..d1eae72 100644
 --- a/core/linux/posix_vmem.cpp
@@ -81,3 +107,69 @@ index 2d42410..d1eae72 100644
  }
  
  // Use two addr spaces: need to remap something twice, therefore use allocate_shared_filemem()
+diff --git a/shell/libretro/libretro_core_options.h b/shell/libretro/libretro_core_options.h
+index 8c58e74..c0098c6 100644
+--- a/shell/libretro/libretro_core_options.h
++++ b/shell/libretro/libretro_core_options.h
+@@ -318,6 +318,9 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+       },
+ #ifdef LOW_RES
+       "320x240",
++#elif defined(__PROSPERO__)
++      /* PS5: the title's 4K output holds x4.5 easily. */
++      "2880x2160",
+ #else
+       "640x480",
+ #endif
+@@ -385,6 +388,9 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+       },
+ #if defined(LOW_END)
+       "per-strip (fast, least accurate)",
++#elif defined(__PROSPERO__)
++      /* PS5: accurate per-pixel (OIT) transparency on RADV. */
++      "per-pixel (accurate)",
+ #else
+       "per-triangle (normal)",
+ #endif
+@@ -510,7 +516,12 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+          { "16",  NULL },
+          { NULL, NULL },
+       },
++#ifdef __PROSPERO__
++      /* PS5: full anisotropy; the GPU absorbs it. */
++      "16",
++#else
+       "4",
++#endif
+    },
+    {
+       CORE_OPTION_NAME "_texture_filtering",
+diff --git a/shell/libretro/option.cpp b/shell/libretro/option.cpp
+index 6d317df..dc396a2 100644
+--- a/shell/libretro/option.cpp
++++ b/shell/libretro/option.cpp
+@@ -84,12 +84,24 @@ std::array<Option<int>, 4> CrosshairColor {
+ Option<int> SkipFrame(CORE_OPTION_NAME "_frame_skipping");
+ Option<int> MaxThreads("", 3);
+ Option<int> AutoSkipFrame(CORE_OPTION_NAME "_auto_skip_frame", 0);
++#ifdef __PROSPERO__
++// PS5: fallback used only if the frontend never answers GET_VARIABLE; the
++// option definition default (2880x2160) is what RetroArch actually sends.
++Option<int> RenderResolution("", 2160);
++#else
+ Option<int> RenderResolution("", 480);
++#endif
+ Option<bool> IntegerScale("");
+ Option<bool> LinearInterpolation("", true);
+ Option<bool> VSync("", true);
+ Option<bool> ThreadedRendering(CORE_OPTION_NAME "_threaded_rendering", true);
++#ifdef __PROSPERO__
++// PS5: IntOption keeps the picked string's numeric value (16), where
++// Option<int> would return the index into the values list (4) instead.
++IntOption AnisotropicFiltering(CORE_OPTION_NAME "_anisotropic_filtering", 16);
++#else
+ Option<int> AnisotropicFiltering(CORE_OPTION_NAME "_anisotropic_filtering");
++#endif
+ Option<int> TextureFiltering(CORE_OPTION_NAME "_texture_filtering");
+ Option<bool> PowerVR2Filter(CORE_OPTION_NAME "_pvr2_filtering");
+ Option<int64_t> PixelBufferSize("", 512_MB);
