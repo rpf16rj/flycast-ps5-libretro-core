@@ -37,6 +37,9 @@ CMake, the ps5-payload-sdk extracted, the SDK's bundled `ninja.exe`
    - `posix_vmem.cpp`: `prepare_jit_block`/`release_jit_block` use
      `ps5_exec_allocate`/`ps5_exec_release` (RWX memory from the title's
      exec pools); the static `code_area` is ignored.
+   - Adds the Dreamcast Now / DreamPi feature: community dial-up DNS
+     selection, dreamcast.online presence reporting and the port-1998
+     config server — see `docs/DREAMCAST_NOW.md`.
 3. Toolchain: `toolchain/ps5-toolchain.cmake` + the `ps5-stubs.c` and
    `ps5-libcxx-inst.cpp` objects (libc++ instantiations and members
    extracted from `libc++.a`: `future`, `memory`, `system_error`, `thread`)
@@ -89,6 +92,14 @@ because the default moved past index 3.
 
 `.opt` overrides still work on top of these defaults when the frontend
 persists them.
+
+## Dreamcast Now / DreamPi
+
+The patch adds in-core DreamPi emulation: community DNS selection for
+emulated dial-up, dreamcast.online presence reporting and the port-1998
+config server that lets the site (and a browser) find and configure the
+console. Options: `reicast_dns_server`, `reicast_dcnow`,
+`reicast_dcnow_mac`. Full details: `docs/DREAMCAST_NOW.md`.
 
 ## Core-option overrides
 
