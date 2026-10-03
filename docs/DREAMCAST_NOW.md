@@ -110,6 +110,59 @@ Requirements/limits:
   open during registration.
 - DNS-over-TCP queries are not snooped (games use UDP for DNS).
 
+## Inbound connections / port forwarding
+
+Some games need unsolicited inbound packets (peer connects to you), the
+same games the Dreamcast Live guide flags with the port-forward icon.
+On real hardware the DreamPi owns a `.98` LAN address and the router
+forwards to *the Dreamcast behind it* — never to the Pi. With Flycast the
+emulated console has a virtual PPP address only, so **the PS5's LAN IP
+takes the Dreamcast's place on your network**: forward to it.
+
+The core already does the DreamPi-side NAT in-process, upstream:
+
+- When the emulated Dreamcast listens on a port, `TcpAcceptor`/the UDP
+  sink open a **real socket on the same port on the host** (bind
+  `0.0.0.0:port`) — packets arriving at the PS5's IP are injected into
+  the picoTCP stack toward the Dreamcast.
+- A table of the community games' ports is listened on as soon as the
+  link comes up; DirectPlay4 games (TCP 47624, UDP/TCP 2300-2400) are
+  detected automatically from the game's own packets.
+- `reicast_upnp` (default enabled): when the link comes up, miniupnpc
+  asks the router to map those ports via UPnP IGD — with UPnP enabled on
+  the router **no manual forwarding is needed**. On the PS5 this path is
+  unverified; if the log shows `UPNP Init failed`, forward manually.
+
+Router setup:
+
+1. Reserve the PS5's IP in the router's DHCP (the equivalent of the
+   DreamPi's fixed `.98`).
+2. If UPnP works, nothing else is needed. Otherwise forward the ports the
+   game needs to the **PS5's IP**, per the Dreamcast Live list:
+
+   | Game | Ports |
+   | --- | --- |
+   | Alien Front Online | UDP 7980 |
+   | ChuChu Rocket! | UDP 9789 |
+   | Dee Dee Planet | UDP 9879 |
+   | Ooga Booga | UDP 6001 |
+   | NBA/NFL/NCAA 2K | UDP 5502, 5503, 5656; TCP 5011, 6666 |
+   | Starlancer / PBA Tour Bowling 2001 | TCP+UDP 2300-2400, UDP 6500, TCP+UDP 47624 |
+   | Internet Game Pack | UDP 5656, TCP 5011, TCP 10500-10503 |
+   | The Next Tetris | TCP+UDP 3512 |
+   | Floigan Bros. | TCP 37001 |
+   | Driving Strikers | UDP 30099 |
+   | ClassiCube | UDP 25565 |
+
+   Or put the PS5's IP in the router's **DMZ** — the equivalent of DMZ'ing
+   the Dreamcast's `.98`. (The guide's "never DMZ the Pi" warning doesn't
+   apply: the PS5 *is* the endpoint, not an intermediary.)
+
+Inbound forwarding only exists on the **real PPP path** — same
+requirement as the rest of this feature: *Use DCNet = disabled*. DCNet
+tunnels traffic through its cloud service instead, where the inbound
+model is different.
+
 ## Files
 
 - `core/network/dcnow.h`, `core/network/dcnow.cpp` — service, SHA-256,
